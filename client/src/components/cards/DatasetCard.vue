@@ -334,6 +334,7 @@ export default {
       });
 
       return list;
+      
     },
     categoryTags() {
       let tags = {};
