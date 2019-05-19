@@ -35,6 +35,7 @@ export default {
         axios
           .post(this.annotateUrl, data, {
             headers: {
+              
               "Content-Type": "multipart/form-data"
             }
           })
