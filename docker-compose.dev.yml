@@ -20,6 +20,8 @@ services:
       - cocoannotator
     depends_on:
       - webserver
+    environment:
+      - CHOKIDAR_USEPOLLING=true
   webserver:
     container_name: annotator_webserver
     build:

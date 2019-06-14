@@ -1,6 +1,11 @@
 module.exports = {
   devServer: {
     disableHostCheck: true,
+    watchOptions: {
+      ignored: '/node_modules/',
+      aggregateTimeout: 300,
+      poll: 1000,
+    },
     proxy: {
       "/api/*": {
         target: "http://webserver:5000/api/",
