@@ -45,7 +45,7 @@ def blur_images(image, annotations):
         rectangle(draw, [segment[0],segment[1],segment[4],segment[5]])
     
     # Blur image
-    blurred = im.filter(ImageFilter.GaussianBlur(20))
+    blurred = im.filter(ImageFilter.GaussianBlur(7))
 
     # Paste blurred region and save result
     im.paste(blurred, mask=mask)
@@ -111,7 +111,7 @@ def export_annotations(task_id, dataset_id, categories, blur_categories):
         
         annotations = db_annotations.filter(image_id=image.get('id'))\
             .only(*AnnotationModel.COCO_PROPERTIES)
-        blur_annotations = db_blur_annotations.filter(image_id=image.get('id'))\
+        blur_annotations = db_blur_annotations.filter(image_id=image.get('id'), isbbox=True)\
             .only(*AnnotationModel.COCO_PROPERTIES)
         annotations = fix_ids(annotations)
         num_annotations = 0
