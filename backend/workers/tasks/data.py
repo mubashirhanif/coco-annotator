@@ -15,12 +15,44 @@ import time
 import json
 import os
 
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFilter
+
 from celery import shared_task
 from ..socket import create_socket
 
+def rectangle(draw, xy, fill=255):
+    x0, y0, x1, y1 = xy
+    draw.rectangle(xy, fill=fill)
 
+
+def blur_images(image, annotations):
+    # Open an image
+    im = Image.open(image['path'])
+    im = im.convert('L')
+
+    # Create rounded rectangle mask
+    mask = Image.new('L', im.size, 0)
+    draw = ImageDraw.Draw(mask)
+    for annotation in annotations:
+        segments = annotation.segmentation
+        if not segments:
+            continue
+        # get the fist segment, asssuming only one bbox
+        segment = segments[0]
+        # draw mask from this annotations
+        rectangle(draw, [segment[0],segment[1],segment[4],segment[5]])
+    
+    # Blur image
+    blurred = im.filter(ImageFilter.GaussianBlur(20))
+
+    # Paste blurred region and save result
+    im.paste(blurred, mask=mask)
+    im.save(image['path'])
+    
 @shared_task
-def export_annotations(task_id, dataset_id, categories):
+def export_annotations(task_id, dataset_id, categories, blur_categories):
     
     task = TaskModel.objects.get(id=task_id)
     dataset = DatasetModel.objects.get(id=dataset_id)
@@ -28,7 +60,7 @@ def export_annotations(task_id, dataset_id, categories):
     task.update(status="PROGRESS")
     socket = create_socket()
 
-    task.info("Beginning Export (COCO Format)")
+    task.info("Beginning Export (COCO Format) and Bluring Images")
 
     db_categories = CategoryModel.objects(id__in=categories, deleted=False) \
         .only(*CategoryModel.COCO_PROPERTIES)
@@ -36,8 +68,9 @@ def export_annotations(task_id, dataset_id, categories):
         .only(*ImageModel.COCO_PROPERTIES)
     db_annotations = AnnotationModel.objects(deleted=False, category_id__in=categories)
     
+    db_blur_annotations = AnnotationModel.objects(deleted=False, category_id__in=blur_categories)
+    
     total_items = db_categories.count()
-
     coco = {
         'images': [],
         'categories': [],
@@ -45,6 +78,9 @@ def export_annotations(task_id, dataset_id, categories):
     }
 
     total_items += db_images.count()
+
+    # adding blur items for progress
+    total_items += db_blur_annotations.count()
     progress = 0
 
     # iterate though all categoires and upsert
@@ -72,9 +108,10 @@ def export_annotations(task_id, dataset_id, categories):
     for image in fix_ids(db_images):
 
         progress += 1
-        task.set_progress((progress/total_items)*100, socket=socket)  
-
+        
         annotations = db_annotations.filter(image_id=image.get('id'))\
+            .only(*AnnotationModel.COCO_PROPERTIES)
+        blur_annotations = db_blur_annotations.filter(image_id=image.get('id'))\
             .only(*AnnotationModel.COCO_PROPERTIES)
         annotations = fix_ids(annotations)
         num_annotations = 0
@@ -95,7 +132,13 @@ def export_annotations(task_id, dataset_id, categories):
                 
                 num_annotations += 1
                 coco.get('annotations').append(annotation)
-                
+        task.info(f"Bluring image: {image['file_name']}")
+        blur_images(image, blur_annotations)
+        progress += blur_annotations.count()
+
+        task.set_progress((progress/total_items)*100, socket=socket)  
+
+
         task.info(f"Exporting {num_annotations} annotations for image {image.get('id')}")
         coco.get('images').append(image)
     

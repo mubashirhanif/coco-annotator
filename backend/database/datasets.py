@@ -64,21 +64,21 @@ class DatasetModel(DynamicDocument):
             "name": task.name
         }
 
-    def export_coco(self, categories=None, style="COCO"):
+    def export_coco(self, categories=None,blur_categories=None, style="COCO"):
 
         from workers.tasks import export_annotations
 
         if categories is None or len(categories) == 0:
             categories = self.categories
-
+        
         task = TaskModel(
-            name=f"Exporting {self.name} into {style} format",
+            name=f"Exporting {self.name} into {style} format and bluring images",
             dataset_id=self.id,
             group="Annotation Export"
         )
         task.save()
 
-        cel_task = export_annotations.delay(task.id, self.id, categories)
+        cel_task = export_annotations.delay(task.id, self.id, categories, blur_categories)
 
         return {
             "celery_id": cel_task.id,
