@@ -143,6 +143,7 @@ class AnnotatorId(Resource):
     @login_required
     def get(self, image_id):
         """ Called when loading from the annotator client """
+        # TODO: HINT: We can take the folder name as a regex and filter using "https://stackoverflow.com/a/39133617"
         image = ImageModel.objects(id=image_id)\
             .exclude('events').first()
 
