@@ -32,7 +32,15 @@ export default {
         guidance: true,
         pathOptions: {
           strokeColor: "black",
-          strokeWidth: 1
+          strokeWidth: 5
+        }
+      },
+      crosshair: {
+        show: true,
+        crosshairPath: null,
+        pathOptions: {
+          strokeColor: "black",
+          strokeWidth: 5
         }
       },
       color: {
@@ -65,16 +73,24 @@ export default {
       this.color.auto = pref.auto || this.color.auto;
       this.color.radius = pref.radius || this.color.radius;
     },
-    createBBox(event) {
-      this.polygon.path = new paper.Path(this.polygon.pathOptions);
-      this.bbox = new BBox(event.point);
+    updateBboxPathPoints(){
       this.bbox.getPoints().forEach(point => this.polygon.path.add(point));
     },
-
+    createBBox(event) {
+      if (this.color.auto) {
+        this.color.circle = new paper.Path.Circle(
+          new paper.Point(0, 0),
+          this.color.radius
+        );
+      }
+      this.polygon.path = new paper.Path(this.polygon.pathOptions);
+      this.bbox = new BBox(event.point);
+      this.updateBboxPathPoints();
+    },
     modifyBBox(event) {
       this.polygon.path = new paper.Path(this.polygon.pathOptions);
       this.bbox.modifyPoint(event.point);
-      this.bbox.getPoints().forEach(point => this.polygon.path.add(point));
+      this.updateBboxPathPoints();
     },
     /**
      * Frees current bbox
@@ -124,12 +140,17 @@ export default {
       if (this.completeBBox()) return;
     },
     onMouseMove(event) {
+      if(this.crosshair.show){
+        this.drawCrosshair(event.point);
+      }
       if (this.polygon.path == null) return;
       if (this.polygon.path.segments.length === 0) return;
       this.autoStrokeColor(event.point);
 
       this.removeLastBBox();
       this.modifyBBox(event);
+      
+      
     },
     /**
      * Undo points
@@ -165,6 +186,29 @@ export default {
 
       return true;
     },
+    drawCrosshair(point){
+      
+      let size = new Size(this.$parent.image.raster.width, this.$parent.image.raster.height);
+      if(!!this.crosshair.crosshairPath) 
+        this.crosshair.crosshairPath.remove();
+      this.crosshair.crosshairPath = new paper.CompoundPath(this.crosshair.pathOptions);
+      this.crosshair.crosshairPath.addChild(
+        new paper.Path.Line({
+          from: [point.x, -1*size.height],
+          to: [point.x, size.height],
+          strokeColor: this.crosshair.pathOptions.strokeColor,
+          strokeWidth: this.crosshair.pathOptions.strokeWidth
+        })
+      );
+      this.crosshair.crosshairPath.addChild(
+        new paper.Path.Line({
+          from: [-1*size.width, point.y],
+          to: [size.width, point.y],
+          strokeColor: this.crosshair.pathOptions.strokeColor,
+          strokeWidth: this.crosshair.pathOptions.strokeWidth
+        })
+      );
+     },
     removeLastBBox() {
       this.polygon.path.removeSegments();
     }
@@ -196,9 +240,9 @@ export default {
     },
     "color.auto"(value) {
       if (value && this.polygon.path) {
-        this.color.circle = new paper.Path.Rectangle(
+        this.color.circle = new paper.Path.Circle(
           new paper.Point(0, 0),
-          new paper.Size(10, 10)
+          this.color.radius
         );
       }
       if (!value && this.color.circle) {
