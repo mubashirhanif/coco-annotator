@@ -1,16 +1,14 @@
 <template>
   <div v-show="bbox.isActive">
     <PanelButton name="Delete BBox" @click="bbox.deleteBbox" />
+    <PanelToggle name="Crosshair" v-model="bbox.crosshair.show" />
     <PanelToggle name="Auto Select Color" v-model="bbox.color.auto" />
     <PanelToggle
       v-show="bbox.color.auto"
       name="Only Black or White"
       v-model="bbox.color.blackOrWhite"
     />
-    <PanelInputString
-      name="Stroke Color"
-      v-model="bbox.polygon.pathOptions.strokeColor"
-    />
+    <PanelInputString name="Stroke Color" v-model="bbox.polygon.pathOptions.strokeColor" />
   </div>
 </template>
 
