@@ -158,6 +158,7 @@ class AnnotatorId(Resource):
 
         # Get next and previous image
         images = ImageModel.objects(dataset_id=dataset.id, deleted=False)
+        #TODO: This is where the navigational problem is.
         pre = images.filter(file_name__lt=image.file_name).order_by('-file_name').first()
         nex = images.filter(file_name__gt=image.file_name).order_by('file_name').first()
 
