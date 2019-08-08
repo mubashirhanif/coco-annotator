@@ -8,10 +8,10 @@
       <div class="row">
         <div class="col-sm text-left">
           <!-- Change this section to whatever you would like -->
-          <h1>COCO Annotator</h1>
+          <h1>FML Annotator</h1>
           <hr />
           <div v-if="totalUsers === 0">
-            <h3>You have successfully installed COCO Annotator!</h3>
+            <h3>You have successfully installed FML Annotator!</h3>
             <p>Use the registeration form to create an admin account</p>
             <p>
               If you have any questions please checkout the
@@ -24,7 +24,7 @@
           </div>
           <div v-else>
             <p>
-              COCO Annotator is a web-based image annotation tool designed for
+              FML Annotator is a web-based image annotation tool designed for
               versatility and efficiently label images to create training data
               for image localization and object detection.
               <br /><br />
