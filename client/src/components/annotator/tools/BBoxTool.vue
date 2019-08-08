@@ -27,6 +27,7 @@ export default {
       scaleFactor: 3,
       cursor: "copy",
       bbox: null,
+      size: null,
       polygon: {
         path: null,
         guidance: true,
@@ -127,6 +128,9 @@ export default {
       );
     },
     onMouseDown(event) {
+      if(this.invalidMousePosition(event.point)){
+        return;
+      }
       if (this.polygon.path == null && this.checkAnnotationExist()) {
         this.$parent.currentCategory.createAnnotation();
       }
@@ -140,6 +144,7 @@ export default {
       if (this.completeBBox()) return;
     },
     onMouseMove(event) {
+      console.log(`size ${this.size.width}, ${this.size.height}\npoint: ${event.point.x}, ${event.point.y}`);
       if(this.crosshair.show){
         this.drawCrosshair(event.point);
       }
@@ -186,24 +191,26 @@ export default {
 
       return true;
     },
+    invalidMousePosition(point){
+      return Math.abs(point.x) > this.size.width || Math.abs(point.y) > this.size.height;
+    },
     drawCrosshair(point){
       
-      let size = new Size(this.$parent.image.raster.width, this.$parent.image.raster.height);
       if(!!this.crosshair.crosshairPath) 
         this.crosshair.crosshairPath.remove();
       this.crosshair.crosshairPath = new paper.CompoundPath(this.crosshair.pathOptions);
       this.crosshair.crosshairPath.addChild(
         new paper.Path.Line({
-          from: [point.x, -1*size.height],
-          to: [point.x, size.height],
+          from: [point.x, -1*this.size.height],
+          to: [point.x, this.size.height],
           strokeColor: this.crosshair.pathOptions.strokeColor,
           strokeWidth: this.crosshair.pathOptions.strokeWidth
         })
       );
       this.crosshair.crosshairPath.addChild(
         new paper.Path.Line({
-          from: [-1*size.width, point.y],
-          to: [size.width, point.y],
+          from: [-1*this.size.width, point.y],
+          to: [this.size.width, point.y],
           strokeColor: this.crosshair.pathOptions.strokeColor,
           strokeWidth: this.crosshair.pathOptions.strokeWidth
         })
@@ -217,6 +224,9 @@ export default {
     isDisabled() {
       return this.$parent.current.annotation === -1;
     }
+    // size() {
+    //   return 
+    // }
   },
   watch: {
     isActive(active) {
@@ -224,6 +234,11 @@ export default {
         this.tool.activate();
         localStorage.setItem("editorTool", this.name);
       }
+      else{
+        if(!!this.crosshair.crosshairPath)
+          this.crosshair.crosshairPath.remove()
+      }
+      this.size = new Size(this.$parent.image.data.width/2, this.$parent.image.data.height/2);
     },
     /**
      * Change width of stroke based on zoom of image
