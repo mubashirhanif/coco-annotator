@@ -233,6 +233,10 @@ export default {
       if (this.polygon.path != null)
         this.polygon.path.strokeWidth = newScale * this.scaleFactor;
     },
+    "crosshair.show"(newValue){
+      if(!newValue && !!this.crosshair.crosshairPath)
+        this.crosshair.crosshairPath.remove()
+    },
     "polygon.pathOptions.strokeColor"(newColor) {
       if (this.polygon.path == null) return;
 
