@@ -100,6 +100,7 @@
         :previousimage="image.previous"
         :nextimage="image.next"
         :filename="image.filename"
+        :folders="$route.query.folders"
         ref="filetitle"
       />
 
@@ -539,11 +540,14 @@ export default {
       refs.eraser.setPreferences(preferences.eraser || {});
     },
     getData(callback) {
+      console.log("here: ", this.$route.query.folders);
       let process = "Loading annotation data";
       this.addProcess(process);
       this.loading.data = true;
+      let foldersToSend = !!this.$route.query.folders ? [this.$route.query.folders].flat() : [];
+
       axios
-        .get("/api/annotator/data/" + this.image.id)
+        .get("/api/annotator/data/" + this.image.id, { params: {folders: foldersToSend} })
         .then(response => {
           let data = response.data;
 

@@ -1,4 +1,5 @@
 import datetime
+import os
 
 from flask_restplus import Namespace, Resource
 from flask_login import login_required, current_user
@@ -143,6 +144,7 @@ class AnnotatorId(Resource):
     @login_required
     def get(self, image_id):
         """ Called when loading from the annotator client """
+        folders = request.args.getlist("folders[]")
         image = ImageModel.objects(id=image_id)\
             .exclude('events').first()
 
@@ -150,6 +152,18 @@ class AnnotatorId(Resource):
             return {'success': False, 'message': 'Could not load image'}, 400
 
         dataset = current_user.datasets.filter(id=image.dataset_id).first()
+
+        # Make sure folders starts with is in proper format
+        if len(folders) > 0:
+            folders[0] = folders[0].strip('/')
+            if folders[-1][-1] != '/':
+                folders[-1] = folders[-1] + '/'
+
+        # Get directory
+        directory = os.path.join(dataset.directory, '/'.join(folders))
+        if not os.path.exists(directory):
+            return {'message': 'Directory does not exist.'}, 400
+
         if dataset is None:
             return {'success': False, 'message': 'Could not find associated dataset'}, 400
 
@@ -157,7 +171,7 @@ class AnnotatorId(Resource):
             .in_bulk(dataset.categories).items()
 
         # Get next and previous image
-        images = ImageModel.objects(dataset_id=dataset.id, deleted=False)
+        images = ImageModel.objects(dataset_id=dataset.id, path__startswith=directory, deleted=False)
         pre = images.filter(file_name__lt=image.file_name).order_by('-file_name').first()
         nex = images.filter(file_name__gt=image.file_name).order_by('file_name').first()
 
