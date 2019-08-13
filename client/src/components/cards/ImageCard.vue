@@ -97,6 +97,10 @@ export default {
     image: {
       type: Object,
       required: true
+    },
+    folders: {
+      type: [Array,String],
+      required: false
     }
   },
   data() {
@@ -118,7 +122,8 @@ export default {
     openAnnotator() {
       this.$router.push({
         name: "annotate",
-        params: { identifier: this.image.id }
+        params: { identifier: this.image.id },
+        query: { folders: this.folders }
       });
     },
     onDownloadClick() {

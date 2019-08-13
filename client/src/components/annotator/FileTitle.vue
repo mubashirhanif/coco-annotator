@@ -36,6 +36,10 @@ export default {
     nextimage: {
       type: Number,
       default: null
+    },
+    folders: {
+      type: [Array, String],
+      default: null
     }
   },
   methods: {
@@ -50,7 +54,8 @@ export default {
 
       this.$nextTick(() => {
         this.$parent.save(() => {
-          this.$router.push({ name: "annotate", params: { identifier } });
+          let folders = !!this.folders ? [this.folders] : []
+          this.$router.push({ name: "annotate", params: { identifier }, query: {folders: folders.flat()}});
         });
       });
     }

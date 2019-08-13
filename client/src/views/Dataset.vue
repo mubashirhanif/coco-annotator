@@ -55,7 +55,7 @@
           <div v-else>
             <Pagination :pages="pages" @pagechange="updatePage" />
             <div class="row">
-              <ImageCard v-for="image in images" :key="image.id" :image="image" />
+              <ImageCard v-for="image in images" :key="image.id" :image="image" :folders="folders" />
             </div>
             <Pagination :pages="pages" @pagechange="updatePage" />
           </div>
