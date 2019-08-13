@@ -27,12 +27,21 @@ export default {
       scaleFactor: 3,
       cursor: "copy",
       bbox: null,
+      size: null,
       polygon: {
         path: null,
         guidance: true,
         pathOptions: {
           strokeColor: "black",
-          strokeWidth: 1
+          strokeWidth: 5
+        }
+      },
+      crosshair: {
+        show: true,
+        crosshairPath: null,
+        pathOptions: {
+          strokeColor: "black",
+          strokeWidth: 5
         }
       },
       color: {
@@ -65,16 +74,24 @@ export default {
       this.color.auto = pref.auto || this.color.auto;
       this.color.radius = pref.radius || this.color.radius;
     },
-    createBBox(event) {
-      this.polygon.path = new paper.Path(this.polygon.pathOptions);
-      this.bbox = new BBox(event.point);
+    updateBboxPathPoints(){
       this.bbox.getPoints().forEach(point => this.polygon.path.add(point));
     },
-
+    createBBox(event) {
+      if (this.color.auto) {
+        this.color.circle = new paper.Path.Circle(
+          new paper.Point(0, 0),
+          this.color.radius
+        );
+      }
+      this.polygon.path = new paper.Path(this.polygon.pathOptions);
+      this.bbox = new BBox(event.point);
+      this.updateBboxPathPoints();
+    },
     modifyBBox(event) {
       this.polygon.path = new paper.Path(this.polygon.pathOptions);
       this.bbox.modifyPoint(event.point);
-      this.bbox.getPoints().forEach(point => this.polygon.path.add(point));
+      this.updateBboxPathPoints();
     },
     /**
      * Frees current bbox
@@ -111,6 +128,9 @@ export default {
       );
     },
     onMouseDown(event) {
+      if(this.invalidMousePosition(event.point)){
+        return;
+      }
       if (this.polygon.path == null && this.checkAnnotationExist()) {
         this.$parent.currentCategory.createAnnotation();
       }
@@ -124,12 +144,18 @@ export default {
       if (this.completeBBox()) return;
     },
     onMouseMove(event) {
+      console.log(`size ${this.size.width}, ${this.size.height}\npoint: ${event.point.x}, ${event.point.y}`);
+      if(this.crosshair.show){
+        this.drawCrosshair(event.point);
+      }
       if (this.polygon.path == null) return;
       if (this.polygon.path.segments.length === 0) return;
       this.autoStrokeColor(event.point);
 
       this.removeLastBBox();
       this.modifyBBox(event);
+      
+      
     },
     /**
      * Undo points
@@ -165,6 +191,31 @@ export default {
 
       return true;
     },
+    invalidMousePosition(point){
+      return Math.abs(point.x) > this.size.width || Math.abs(point.y) > this.size.height;
+    },
+    drawCrosshair(point){
+      
+      if(!!this.crosshair.crosshairPath) 
+        this.crosshair.crosshairPath.remove();
+      this.crosshair.crosshairPath = new paper.CompoundPath(this.crosshair.pathOptions);
+      this.crosshair.crosshairPath.addChild(
+        new paper.Path.Line({
+          from: [point.x, -1*this.size.height],
+          to: [point.x, this.size.height],
+          strokeColor: this.crosshair.pathOptions.strokeColor,
+          strokeWidth: this.crosshair.pathOptions.strokeWidth
+        })
+      );
+      this.crosshair.crosshairPath.addChild(
+        new paper.Path.Line({
+          from: [-1*this.size.width, point.y],
+          to: [this.size.width, point.y],
+          strokeColor: this.crosshair.pathOptions.strokeColor,
+          strokeWidth: this.crosshair.pathOptions.strokeWidth
+        })
+      );
+     },
     removeLastBBox() {
       this.polygon.path.removeSegments();
     }
@@ -173,6 +224,9 @@ export default {
     isDisabled() {
       return this.$parent.current.annotation === -1;
     }
+    // size() {
+    //   return 
+    // }
   },
   watch: {
     isActive(active) {
@@ -180,6 +234,11 @@ export default {
         this.tool.activate();
         localStorage.setItem("editorTool", this.name);
       }
+      else{
+        if(!!this.crosshair.crosshairPath)
+          this.crosshair.crosshairPath.remove()
+      }
+      this.size = new Size(this.$parent.image.data.width/2, this.$parent.image.data.height/2);
     },
     /**
      * Change width of stroke based on zoom of image
@@ -189,6 +248,10 @@ export default {
       if (this.polygon.path != null)
         this.polygon.path.strokeWidth = newScale * this.scaleFactor;
     },
+    "crosshair.show"(newValue){
+      if(!newValue && !!this.crosshair.crosshairPath)
+        this.crosshair.crosshairPath.remove()
+    },
     "polygon.pathOptions.strokeColor"(newColor) {
       if (this.polygon.path == null) return;
 
@@ -196,9 +259,9 @@ export default {
     },
     "color.auto"(value) {
       if (value && this.polygon.path) {
-        this.color.circle = new paper.Path.Rectangle(
+        this.color.circle = new paper.Path.Circle(
           new paper.Point(0, 0),
-          new paper.Size(10, 10)
+          this.color.radius
         );
       }
       if (!value && this.color.circle) {
