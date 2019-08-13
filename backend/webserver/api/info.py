@@ -14,10 +14,10 @@ class Info(Resource):
         """ Returns information about current version """
 
         return {
-            "name": "COCO Annotator",
-            "author": "Justin Brooks",
-            "demo": "https://annotator.justinbrooks.ca/",
-            "repo": "https://github.com/jsbroks/coco-annotator",
+            "name": "FML Annotator",
+            "author": "Justin Brooks, Mubashir Hanif",
+            "demo": "",
+            "repo": "https://github.com/mubashirhanif/coco-annotator",
             "git": {
                 "tag": Config.VERSION
             },
