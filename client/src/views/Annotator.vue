@@ -1,24 +1,13 @@
 <template>
   <div style="display: block; height: inherit;">
-    
     <aside v-show="panels.show.left" class="left-panel shadow-lg">
       <div v-show="mode == 'segment'">
         <hr />
 
-        <SelectTool
-          v-model="activeTool"
-          :scale="image.scale"
-          @setcursor="setCursor"
-          ref="select"
-        />
+        <SelectTool v-model="activeTool" :scale="image.scale" @setcursor="setCursor" ref="select" />
         <hr />
 
-        <BBoxTool
-          v-model="activeTool"
-          :scale="image.scale"
-          @setcursor="setCursor"
-          ref="bbox"
-        />
+        <BBoxTool v-model="activeTool" :scale="image.scale" @setcursor="setCursor" ref="bbox" />
 
         <PolygonTool
           v-model="activeTool"
@@ -36,30 +25,11 @@
           ref="magicwand"
         />
 
-        <BrushTool
-          v-model="activeTool"
-          :scale="image.scale"
-          @setcursor="setCursor"
-          ref="brush"
-        />
-        <EraserTool
-          v-model="activeTool"
-          :scale="image.scale"
-          @setcursor="setCursor"
-          ref="eraser"
-        />
+        <BrushTool v-model="activeTool" :scale="image.scale" @setcursor="setCursor" ref="brush" />
+        <EraserTool v-model="activeTool" :scale="image.scale" @setcursor="setCursor" ref="eraser" />
 
-        <KeypointTool
-          v-model="activeTool"
-          @setcursor="setCursor"
-          ref="keypoint"
-        />
-        <DEXTRTool
-          v-model="activeTool"
-          :scale="image.scale"
-          @setcursor="setCursor"
-          ref="dextr"
-        />
+        <KeypointTool v-model="activeTool" @setcursor="setCursor" ref="keypoint" />
+        <DEXTRTool v-model="activeTool" :scale="image.scale" @setcursor="setCursor" ref="dextr" />
       </div>
       <hr />
 
@@ -75,7 +45,7 @@
         <ShowAllButton />
         <HideAllButton />
       </div>
-      <hr>
+      <hr />
       <CenterButton />
       <UndoButton />
 
@@ -84,11 +54,7 @@
       <DownloadButton :image="image" />
       <SaveButton />
       <ModeButton v-model="mode" />
-      <SettingsButton
-        :metadata="image.metadata"
-        :commands="commands"
-        ref="settings"
-      />
+      <SettingsButton :metadata="image.metadata" :commands="commands" ref="settings" />
 
       <hr />
       <DeleteButton :image="image" />
@@ -106,29 +72,17 @@
 
       <div v-if="categories.length > 5">
         <div style="padding: 0px 5px">
-          <input
-            v-model="search"
-            class="search"
-            placeholder="Category Search"
-          />
+          <input v-model="search" class="search" placeholder="Category Search" />
         </div>
       </div>
 
-      <div
-        class="sidebar-section"
-        :style="{ 'max-height': mode == 'label' ? '100%' : '57%' }"
-      >
+      <div class="sidebar-section" :style="{ 'max-height': mode == 'label' ? '100%' : '57%' }">
         <p
           v-if="categories.length == 0"
           style="color: lightgray; font-size: 12px"
-        >
-          No categories have been enabled for this image.
-        </p>
+        >No categories have been enabled for this image.</p>
 
-        <div
-          v-show="mode == 'segment'"
-          style="overflow: auto; max-height: 100%"
-        >
+        <div v-show="mode == 'segment'" style="overflow: auto; max-height: 100%">
           <Category
             v-for="(category, index) in categories"
             :key="category.id + '-category'"
@@ -187,15 +141,10 @@
           </div>
 
           <div v-if="$refs.keypoint != null">
-            <KeypointPanel
-              :keypoint="$refs.keypoint"
-              :current-annotation="currentAnnotation"
-            />
+            <KeypointPanel :keypoint="$refs.keypoint" :current-annotation="currentAnnotation" />
           </div>
           <div v-if="$refs.dextr != null">
-            <DEXTRPanel
-              :dextr="$refs.dextr"
-            />
+            <DEXTRPanel :dextr="$refs.dextr" />
           </div>
         </div>
       </div>
@@ -207,11 +156,15 @@
       </div>
     </div>
 
-    <div v-show="annotating.length > 0" class="fixed-bottom alert alert-warning alert-dismissible fade show">
+    <div
+      v-show="annotating.length > 0"
+      class="fixed-bottom alert alert-warning alert-dismissible fade show"
+    >
       <span>
-      This image is being annotated by <b>{{ annotating.join(', ') }}</b>.
+        This image is being annotated by
+        <b>{{ annotating.join(', ') }}</b>.
       </span>
-      
+
       <button type="button" class="close" data-dismiss="alert" aria-label="Close">
         <span aria-hidden="true">&times;</span>
       </button>
@@ -475,8 +428,17 @@ export default {
 
       return { zoom: zoom, offset: a };
     },
-
+    setCategoryFromURL() {
+      if (this.categories.length <= 0) return;
+      else {
+        let selectedCategory = this.$route.query.category;
+        if (selectedCategory) this.current.category = selectedCategory;
+        else this.current.category = 0;
+      }
+      console.log("current: ", this.currentCategory);
+    },
     initCanvas() {
+      console.log("canvas: ", this.currentCategory);
       let process = "Initializing canvas";
       this.addProcess(process);
       this.loading.image = true;
@@ -544,10 +506,14 @@ export default {
       let process = "Loading annotation data";
       this.addProcess(process);
       this.loading.data = true;
-      let foldersToSend = !!this.$route.query.folders ? [this.$route.query.folders].flat() : [];
+      let foldersToSend = !!this.$route.query.folders
+        ? [this.$route.query.folders].flat()
+        : [];
 
-      axios
-        .get("/api/annotator/data/" + this.image.id, { params: {folders: foldersToSend} })
+      return axios
+        .get("/api/annotator/data/" + this.image.id, {
+          params: { folders: foldersToSend }
+        })
         .then(response => {
           let data = response.data;
 
@@ -607,7 +573,12 @@ export default {
       return this.$refs.category[index];
     },
     // Current Annotation Operations
-    uniteCurrentAnnotation(compound, simplify = true, undoable = true, isBBox = false) {
+    uniteCurrentAnnotation(
+      compound,
+      simplify = true,
+      undoable = true,
+      isBBox = false
+    ) {
       if (this.currentAnnotation == null) return;
       this.currentAnnotation.unite(compound, simplify, undoable, isBBox);
     },
@@ -813,11 +784,10 @@ export default {
       }
     },
     nextImage() {
-      if(this.image.next != null)
-        this.$refs.filetitle.route(this.image.next);
+      if (this.image.next != null) this.$refs.filetitle.route(this.image.next);
     },
     previousImage() {
-      if(this.image.previous != null)
+      if (this.image.previous != null)
         this.$refs.filetitle.route(this.image.previous);
     }
   },
@@ -929,8 +899,8 @@ export default {
     // });
 
     this.initCanvas();
-    this.getData();
-
+    this.getData().finally(_ => this.setCategoryFromURL());
+    
     this.$socket.emit("annotating", { image_id: this.image.id, active: true });
   },
   created() {
