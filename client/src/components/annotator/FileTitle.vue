@@ -55,7 +55,7 @@ export default {
       this.$nextTick(() => {
         this.$parent.save(() => {
           let folders = !!this.folders ? [this.folders] : []
-          this.$router.push({ name: "annotate", params: { identifier }, query: {folders: folders.flat()}});
+          this.$router.push({ name: "annotate", params: { identifier }, query: {folders: folders.flat(), category: this.$parent.current.category}});
         });
       });
     }
