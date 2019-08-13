@@ -435,10 +435,8 @@ export default {
         if (selectedCategory) this.current.category = selectedCategory;
         else this.current.category = 0;
       }
-      console.log("current: ", this.currentCategory);
     },
     initCanvas() {
-      console.log("canvas: ", this.currentCategory);
       let process = "Initializing canvas";
       this.addProcess(process);
       this.loading.image = true;
@@ -502,7 +500,6 @@ export default {
       refs.eraser.setPreferences(preferences.eraser || {});
     },
     getData(callback) {
-      console.log("here: ", this.$route.query.folders);
       let process = "Loading annotation data";
       this.addProcess(process);
       this.loading.data = true;
