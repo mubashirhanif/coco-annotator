@@ -14,6 +14,8 @@ import numpy as np
 import time
 import json
 import os
+import tarfile
+import shutil
 
 from PIL import Image
 from PIL import ImageDraw
@@ -26,11 +28,21 @@ def rectangle(draw, xy, fill=255):
     x0, y0, x1, y1 = xy
     draw.rectangle(xy, fill=fill)
 
+def compute_paths(image, export_folder):
+    image_path = image['path']
+    image_name = image['file_name']
+    new_image_path = f"{export_folder}/{'/'.join(image_path.split('/')[2:-1])}/"
+    return (image_path, image_name, new_image_path)
+    
+def save_image(image, directory, image_name):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    image.save(f"{directory}{image_name}")
 
-def blur_images(image, annotations):
-    # Open an image
-    im = Image.open(image['path'])
-    im = im.convert('L')
+def blur_image(image_path, annotations):
+    
+    # Open an image and convert to std format
+    im = Image.open(image_path).convert('RGB')
 
     # Create rounded rectangle mask
     mask = Image.new('L', im.size, 0)
@@ -45,12 +57,12 @@ def blur_images(image, annotations):
         rectangle(draw, [segment[0],segment[1],segment[4],segment[5]])
     
     # Blur image
-    blurred = im.filter(ImageFilter.GaussianBlur(7))
+    blurred = im.filter(ImageFilter.GaussianBlur(10))
 
     # Paste blurred region and save result
     im.paste(blurred, mask=mask)
-    im.save(image['path'])
-    
+    return im
+
 @shared_task
 def export_annotations(task_id, dataset_id, categories, blur_categories):
     
@@ -66,10 +78,20 @@ def export_annotations(task_id, dataset_id, categories, blur_categories):
         .only(*CategoryModel.COCO_PROPERTIES)
     db_images = ImageModel.objects(deleted=False, annotated=True, dataset_id=dataset.id)\
         .only(*ImageModel.COCO_PROPERTIES)
+    db_non_annotated_images = ImageModel.objects(deleted=False, annotated=False, dataset_id=dataset.id)\
+        .only(*ImageModel.COCO_PROPERTIES)
     db_annotations = AnnotationModel.objects(deleted=False, category_id__in=categories)
     
     db_blur_annotations = AnnotationModel.objects(deleted=False, category_id__in=blur_categories)
     
+    timestamp = time.time()
+    directory = f"{dataset.directory}.exports/"
+    file_path = f"{directory}coco-{timestamp}"
+    file_ext = ".json"
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     total_items = db_categories.count()
     coco = {
         'images': [],
@@ -81,6 +103,10 @@ def export_annotations(task_id, dataset_id, categories, blur_categories):
 
     # adding blur items for progress
     total_items += db_blur_annotations.count()
+
+    # adding compression progres points
+    total_items += 30
+
     progress = 0
 
     # iterate though all categoires and upsert
@@ -106,7 +132,7 @@ def export_annotations(task_id, dataset_id, categories, blur_categories):
     total_annotations = db_annotations.count()
     total_images = db_images.count()
     for image in fix_ids(db_images):
-
+        image_path, image_name, new_image_path = compute_paths(image, file_path)
         progress += 1
         
         annotations = db_annotations.filter(image_id=image.get('id'))\
@@ -133,7 +159,8 @@ def export_annotations(task_id, dataset_id, categories, blur_categories):
                 num_annotations += 1
                 coco.get('annotations').append(annotation)
         task.info(f"Bluring image: {image['file_name']}")
-        blur_images(image, blur_annotations)
+        im = blur_image(image_path, blur_annotations)
+        save_image(im, new_image_path, image_name)
         progress += blur_annotations.count()
 
         task.set_progress((progress/total_items)*100, socket=socket)  
@@ -142,21 +169,29 @@ def export_annotations(task_id, dataset_id, categories, blur_categories):
         task.info(f"Exporting {num_annotations} annotations for image {image.get('id')}")
         coco.get('images').append(image)
     
+    # save rest of the images
+    for image in fix_ids(db_non_annotated_images):
+        image_path, image_name, new_image_path = compute_paths(image, file_path)
+        save_image(Image.open(image_path).convert('RGB'), new_image_path, image_name)
+        
+    # compressing blurred images. and removing the actual folder.
+    tarball = tarfile.open(f"{file_path}.tar.gz", "w:gz")
+    tarball.add(f"{file_path}/", file_path.split('/')[-1])
+    tarball.close()
+    shutil.rmtree(f"{file_path}/")
+    progress += 30
+
+    
+    task.set_progress((progress/total_items)*100, socket=socket)  
+
     task.info(f"Done export {total_annotations} annotations and {total_images} images from {dataset.name}")
 
-    timestamp = time.time()
-    directory = f"{dataset.directory}.exports/"
-    file_path = f"{directory}coco-{timestamp}.json"
-
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
     task.info(f"Writing export to file {file_path}")
-    with open(file_path, 'w') as fp:
+    with open(file_path+file_ext, 'w') as fp:
         json.dump(coco, fp)
 
     task.info("Creating export object")
-    export = ExportModel(dataset_id=dataset.id, path=file_path, tags=["COCO", *category_names])
+    export = ExportModel(dataset_id=dataset.id, path=file_path+file_ext, tags=["COCO", *category_names])
     export.save()
 
     task.set_progress(100, socket=socket)

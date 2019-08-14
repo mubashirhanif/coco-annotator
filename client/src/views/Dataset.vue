@@ -88,8 +88,13 @@
                 <button
                   class="btn btn-sm btn-success"
                   style="float: right; margin: 2px; padding: 2px"
+                  @click="downloadTarExport(exp.id)"
+                >Download Images</button>
+                <button
+                  class="btn btn-sm btn-success"
+                  style="float: right; margin: 2px; padding: 2px"
                   @click="downloadExport(exp.id)"
-                >Download</button>
+                >Download Labels</button>
               </div>
             </div>
           </div>
@@ -492,6 +497,9 @@ export default {
     },
     downloadExport(id) {
       Export.download(id, this.dataset.name);
+    },
+    downloadTarExport(id) {
+      Export.downloadTar(id, this.dataset.name);
     },
     getExports() {
       Dataset.getExports(this.dataset.id).then(response => {
