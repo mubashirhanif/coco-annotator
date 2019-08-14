@@ -69,3 +69,23 @@ class DatasetExports(Resource):
 
         return send_file(export.path, attachment_filename=f"{dataset.name}-{'-'.join(export.tags)}.json", as_attachment=True)
 
+@api.route('/<int:export_id>/downloadtar')
+class ImageExports(Resource):
+
+    @login_required
+    def get(self, export_id):
+        """ Returns exports """
+
+        export = ExportModel.objects(id=export_id).first()
+        if export is None:
+            return {"message": "Invalid export ID"}, 400
+
+        dataset = current_user.datasets.filter(id=export.dataset_id).first()
+        if dataset is None:
+            return {"message": "Invalid dataset ID"}, 400
+        
+        if not current_user.can_download(dataset):
+            return {"message": "You do not have permission to download the dataset's annotations"}, 403
+        path = export.path.replace(".json", ".tar.gz")
+        return send_file(path, attachment_filename=f"{dataset.name}-{'-'.join(export.tags)}.tar.gz", as_attachment=True)
+

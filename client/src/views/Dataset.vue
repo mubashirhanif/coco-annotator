@@ -1,57 +1,66 @@
 <template>
   <div @mousemove="mouseMove">
     <div style="padding-top: 55px" />
-    
-    <div
-      class="bg-light"
-      :style="{ 'margin-left': sidebar.width + 'px' }"
-    >
+
+    <div class="bg-light" :style="{ 'margin-left': sidebar.width + 'px' }">
       <nav class="nav border-bottom shadow-sm" style="background-color: #4b5162">
-        <a class="btn tab" @click="tab = 'images'" :style="{'color': tab == 'images' ? 'white' : 'darkgray'}">
+        <a
+          class="btn tab"
+          @click="tab = 'images'"
+          :style="{'color': tab == 'images' ? 'white' : 'darkgray'}"
+        >
           <i class="fa fa-picture-o" aria-hidden="true"></i> Images
         </a>
-        <a class="btn tab" @click="tab = 'exports'" :style="{'color': tab == 'exports' ? 'white' : 'darkgray'}">
+        <a
+          class="btn tab"
+          @click="tab = 'exports'"
+          :style="{'color': tab == 'exports' ? 'white' : 'darkgray'}"
+        >
           <i class="fa fa-share" aria-hidden="true"></i> Exports
         </a>
-        <a class="btn tab" @click="tab = 'members'" :style="{'color': tab == 'members' ? 'white' : 'darkgray'}">
+        <a
+          class="btn tab"
+          @click="tab = 'members'"
+          :style="{'color': tab == 'members' ? 'white' : 'darkgray'}"
+        >
           <i class="fa fa-users" aria-hidden="true"></i> Members
         </a>
-        <a class="btn tab" @click="tab = 'statistics'" :style="{'color': tab == 'statistics' ? 'white' : 'darkgray'}">
+        <a
+          class="btn tab"
+          @click="tab = 'statistics'"
+          :style="{'color': tab == 'statistics' ? 'white' : 'darkgray'}"
+        >
           <i class="fa fa-bar-chart" aria-hidden="true"></i> Statistics
         </a>
-        <a class="btn tab" @click="tab = 'settings'" :style="{'color': tab == 'settings' ? 'white' : 'darkgray'}">
+        <a
+          class="btn tab"
+          @click="tab = 'settings'"
+          :style="{'color': tab == 'settings' ? 'white' : 'darkgray'}"
+        >
           <i class="fa fa-cog" aria-hidden="true"></i> Settings
         </a>
       </nav>
-    
-      <div class="bg-light text-left" style="overflow: auto; height: calc(100vh - 100px); margin: 10px">
+
+      <div
+        class="bg-light text-left"
+        style="overflow: auto; height: calc(100vh - 100px); margin: 10px"
+      >
         <div class="container" v-show="tab == 'images'">
-          
           <ol class="breadcrumb">
             <li class="breadcrumb-item"></li>
             <li class="breadcrumb-item active">
-              <button class="btn btn-sm btn-link" @click="folders = []">
-                {{ dataset.name }}
-              </button>
+              <button class="btn btn-sm btn-link" @click="folders = []">{{ dataset.name }}</button>
             </li>
-            <li
-              v-for="(folder, folderId) in folders"
-              :key="folderId"
-              class="breadcrumb-item"
-            >
+            <li v-for="(folder, folderId) in folders" :key="folderId" class="breadcrumb-item">
               <button
                 class="btn btn-sm btn-link"
                 :disabled="folders[folders.length - 1] === folder"
                 @click="removeFolder(folder)"
-              >
-                {{ folder }}
-              </button>
+              >{{ folder }}</button>
             </li>
           </ol>
 
-          <p class="text-center" v-if="images.length < 1">
-            No images found in directory.
-          </p>
+          <p class="text-center" v-if="images.length < 1">No images found in directory.</p>
           <div v-else>
             <Pagination :pages="pages" @pagechange="updatePage" />
             <div class="row">
@@ -59,71 +68,80 @@
             </div>
             <Pagination :pages="pages" @pagechange="updatePage" />
           </div>
-
         </div>
         <div class="container" v-show="tab == 'exports'">
           <div class="card my-3 p-3 shadow-sm mr-2">
-            <h6 class="border-bottom border-gray pb-2"><b>Exports</b></h6>
-            
+            <h6 class="border-bottom border-gray pb-2">
+              <b>Exports</b>
+            </h6>
+
             <div class="media text-muted pt-3" v-for="exp in datasetExports">
               <div class="media-body lh-125 border-bottom border-gray">
-                  {{exp.id}}. Exported {{ exp.ago.length > 0 ? exp.ago : 0 + " seconds" }} ago
-                  <div style="display: inline">
-                    <span
-                      v-for="tag in exp.tags"
-                      class="badge badge-secondary"
-                      style="margin: 1px"
-                    >
-                      {{tag}}
-                    </span>
-                  </div>
-                  <button 
-                    class="btn btn-sm btn-success"
-                    style="float: right; margin: 2px; padding: 2px"
-                    @click="downloadExport(exp.id)"
-                  >
-                    Download
-                  </button>
+                {{exp.id}}. Exported {{ exp.ago.length > 0 ? exp.ago : 0 + " seconds" }} ago
+                <div style="display: inline">
+                  <span
+                    v-for="tag in exp.tags"
+                    class="badge badge-secondary"
+                    style="margin: 1px"
+                  >{{tag}}</span>
+                </div>
+                <button
+                  class="btn btn-sm btn-success"
+                  style="float: right; margin: 2px; padding: 2px"
+                  @click="downloadTarExport(exp.id)"
+                >Download Images</button>
+                <button
+                  class="btn btn-sm btn-success"
+                  style="float: right; margin: 2px; padding: 2px"
+                  @click="downloadExport(exp.id)"
+                >Download Labels</button>
               </div>
             </div>
           </div>
         </div>
 
         <div class="container" v-show="tab == 'members'">
+          <div class="card my-3 p-3 shadow-sm mr-2">
+            <h6 class="border-bottom border-gray pb-2">
+              <b>Invite Members</b>
+            </h6>
+          </div>
 
           <div class="card my-3 p-3 shadow-sm mr-2">
-            <h6 class="border-bottom border-gray pb-2"><b>Invite Members</b></h6>
-            
-          </div>
-          
-          <div class="card my-3 p-3 shadow-sm mr-2">
-            <h6 class="border-bottom border-gray pb-2"><b>Exisiting Memebers</b></h6>
-            
+            <h6 class="border-bottom border-gray pb-2">
+              <b>Exisiting Memebers</b>
+            </h6>
+
             <div class="media text-muted pt-3" v-for="user in users">
-              <img src="https://d1nhio0ox7pgb.cloudfront.net/_img/o_collection_png/green_dark_grey/256x256/plain/user.png" class="mr-2 rounded" style="width: 32px; height: 32px;">
+              <img
+                src="https://d1nhio0ox7pgb.cloudfront.net/_img/o_collection_png/green_dark_grey/256x256/plain/user.png"
+                class="mr-2 rounded"
+                style="width: 32px; height: 32px;"
+              />
               <div class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
                 <div class="d-flex justify-content-between align-items-center w-100">
                   <div class="text-gray-dark">
-                    <strong>{{ user.name }}</strong> @{{user.username}}
+                    <strong>{{ user.name }}</strong>
+                    @{{user.username}}
                   </div>
                   <a href="#">{{ user.group }}</a>
                 </div>
-                <span class="d-block">Last seen: {{ new Date(user.last_seen['$date']).toISOString().slice(0, 19).replace('T', ' ') }} UTC</span>
+                <span
+                  class="d-block"
+                >Last seen: {{ new Date(user.last_seen['$date']).toISOString().slice(0, 19).replace('T', ' ') }} UTC</span>
               </div>
             </div>
           </div>
-
         </div>
         <div class="container" v-show="tab == 'statistics'">
-          <div v-if="stats == null">
-            Crunching numbers...
-          </div>
+          <div v-if="stats == null">Crunching numbers...</div>
 
           <div v-else>
             <div class="row">
-              
               <div v-if="stats.total" class="card my-3 p-3 shadow-sm col-3 mr-2">
-                <h6 class="border-bottom border-gray pb-2"><b>Total</b></h6>
+                <h6 class="border-bottom border-gray pb-2">
+                  <b>Total</b>
+                </h6>
                 <div class="row" v-for="stat in Object.keys(stats.total)">
                   <strong class="col-8">{{stat}}:</strong>
                   <span class="col-4">{{stats.total[stat].toFixed(0)}}</span>
@@ -131,44 +149,37 @@
               </div>
 
               <div v-if="stats.average" class="card my-3 p-3 shadow-sm col-4 mr-2">
-                <h6 class="border-bottom border-gray pb-2"><b>Average</b></h6>
+                <h6 class="border-bottom border-gray pb-2">
+                  <b>Average</b>
+                </h6>
                 <div class="row" v-for="stat in Object.keys(stats.average)">
                   <strong class="col-8">{{stat}}:</strong>
                   <span class="col-4">{{stats.average[stat].toFixed(0)}}</span>
                 </div>
               </div>
-
             </div>
-            
           </div>
         </div>
         <div class="container" v-show="tab == 'settings'">
           <div class="card my-3 p-3 shadow-sm mr-2">
-            <h6 class="border-bottom border-gray pb-2"><b>Metadata</b></h6>
-            
-            <button 
-              class="btn btn-sm btn-block btn-danger"
-              @click="resetMetadata"
-            >
-              Rest All Metadata
-            </button>
+            <h6 class="border-bottom border-gray pb-2">
+              <b>Metadata</b>
+            </h6>
+
+            <button class="btn btn-sm btn-block btn-danger" @click="resetMetadata">Rest All Metadata</button>
           </div>
         </div>
-
       </div>
     </div>
 
-    <div
-      id="filter"
-      ref="sidebar"
-      class="sidebar"
-      :style="{ width: sidebar.width + 'px' }"
-    >
+    <div id="filter" ref="sidebar" class="sidebar" :style="{ width: sidebar.width + 'px' }">
       <div style="padding-top: 10px" />
       <h3>{{ dataset.name }}</h3>
       <p class="text-center" style="color: lightgray">
-        Total of <strong style="color: white">{{ imageCount }}</strong> images
-        displayed on <strong style="color: white">{{ pages }}</strong> pages.
+        Total of
+        <strong style="color: white">{{ imageCount }}</strong> images
+        displayed on
+        <strong style="color: white">{{ pages }}</strong> pages.
       </p>
       <div class="row justify-content-md-center sidebar-section-buttons">
         <button
@@ -181,62 +192,42 @@
             <div
               class="progress-bar bg-success"
               :style="{ 'width': `${generate.progress}%` }"
-            >
-              Generating
-            </div>
+            >Generating</div>
           </div>
           <div v-else>Generate</div>
         </button>
 
-        <button
-          type="button"
-          class="btn btn-secondary btn-block"
-          @click="createScanTask"
-        >
+        <button type="button" class="btn btn-secondary btn-block" @click="createScanTask">
           <div v-if="scan.id != null" class="progress">
             <div
               class="progress-bar bg-secondary"
               :style="{ 'width': `${scan.progress}%` }"
-            >
-              Scanning
-            </div>
+            >Scanning</div>
           </div>
           <div v-else>Scan</div>
         </button>
 
-        <button
-          type="button"
-          class="btn btn-primary btn-block"
-          @click="importModal"
-        >
+        <button type="button" class="btn btn-primary btn-block" @click="importModal">
           <div v-if="importing.id != null" class="progress">
             <div
               class="progress-bar bg-primary"
               :style="{ 'width': `${importing.progress}%` }"
-            >
-              Importing
-            </div>
+            >Importing</div>
           </div>
           <div v-else>Import COCO</div>
         </button>
 
-        <button
-          type="button"
-          class="btn btn-dark btn-block"
-          @click="exportModal"
-        >
+        <button type="button" class="btn btn-dark btn-block" @click="exportModal">
           <div v-if="exporting.id != null" class="progress">
             <div
               class="progress-bar bg-dark"
               :style="{ 'width': `${exporting.progress}%` }"
-            >
-              Exporting
-            </div>
+            >Exporting</div>
           </div>
           <div v-else>Export COCO</div>
         </button>
       </div>
-      <hr>
+      <hr />
       <h6 class="sidebar-title text-center">Subdirectories</h6>
       <div class="sidebar-section" style="max-height: 30%; color: lightgray">
         <div v-if="subdirectories.length > 0">
@@ -246,20 +237,13 @@
             class="btn badge badge-pill badge-primary category-badge"
             style="margin: 2px"
             @click="folders.push(subdirectory)"
-          >
-            {{ subdirectory }}
-          </button>
+          >{{ subdirectory }}</button>
         </div>
-        <p v-else style="margin: 0; font-size: 13px; color: gray">
-          No subdirectory found.
-        </p>
+        <p v-else style="margin: 0; font-size: 13px; color: gray">No subdirectory found.</p>
       </div>
-      <hr>
+      <hr />
       <h6 class="sidebar-title text-center">Filtering Options</h6>
-      <div
-        class="sidebar-section"
-        style="max-height: 30%; color: lightgray"
-      >
+      <div class="sidebar-section" style="max-height: 30%; color: lightgray">
         <PanelString name="Contains" v-model="query.file_name__icontains" @submit="updatePage" />
         <PanelToggle name="Show Annotated" v-model="panel.showAnnotated" />
         <PanelToggle name="Show Not Annotated" v-model="panel.showNotAnnotated" />
@@ -272,12 +256,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Generate a Dataset</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -289,29 +268,13 @@
               </div>
               <div class="form-group">
                 <label>Limit</label>
-                <input
-                  class="form-control"
-                  type="number"
-                  v-model="generateLimit"
-                />
+                <input class="form-control" type="number" v-model="generateLimit" />
               </div>
             </form>
           </div>
           <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-primary"
-              @click="generateDataset"
-            >
-              Generate
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
+            <button type="button" class="btn btn-primary" @click="generateDataset">Generate</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -322,12 +285,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Upload COCO Annotaitons</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -345,16 +303,8 @@
               class="btn btn-primary"
               @click="importCOCO"
               data-dismiss="modal"
-            >
-              Upload
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
+            >Upload</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -365,12 +315,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Export {{dataset.name}}</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -386,23 +331,21 @@
                   :typeahead-activation-threshold="0"
                 ></TagsInput>
               </div>
+              <div class="form-group">
+                <label>Categories to blur(Empty for none)</label>
+                <TagsInput
+                  v-model="blurCategories"
+                  element-id="categoriesTags"
+                  :existing-tags="blurCategoriesTags"
+                  :typeahead="true"
+                  :typeahead-activation-threshold="0"
+                ></TagsInput>
+              </div>
             </form>
           </div>
           <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-primary"
-              @click="exportCOCO"
-            >
-              Export
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
+            <button type="button" class="btn btn-primary" @click="exportCOCO">Export</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -418,7 +361,7 @@ import ImageCard from "@/components/cards/ImageCard";
 import Pagination from "@/components/Pagination";
 import PanelString from "@/components/PanelInputString";
 import PanelToggle from "@/components/PanelToggle";
-import PanelDropdown from "@/components/PanelInputDropdown"
+import PanelDropdown from "@/components/PanelInputDropdown";
 import JQuery from "jquery";
 import TagsInput from "@/components/TagsInput";
 
@@ -455,6 +398,7 @@ export default {
       dataset: {
         id: 0
       },
+      blurCategories: [],
       users: [],
       subdirectories: [],
       status: {
@@ -554,16 +498,21 @@ export default {
     downloadExport(id) {
       Export.download(id, this.dataset.name);
     },
+    downloadTarExport(id) {
+      Export.downloadTar(id, this.dataset.name);
+    },
     getExports() {
       Dataset.getExports(this.dataset.id).then(response => {
         this.datasetExports = response.data;
       });
     },
     resetMetadata() {
-      let r = confirm("You can not undo reseting of all metadata in"
-        + "this dataset. This includes metadata of images"
-        + "and annotations.");
-      
+      let r = confirm(
+        "You can not undo reseting of all metadata in" +
+          "this dataset. This includes metadata of images" +
+          "and annotations."
+      );
+
       if (r) {
         Dataset.resetMetadata(this.dataset.id);
       }
@@ -600,8 +549,22 @@ export default {
       $("#exportDataset").modal("show");
     },
     exportCOCO() {
+      if (this.blurCategories.length > 0) {
+        let categories = {}
+        this.categories.forEach((category)=> categories[category.id] = category.name);
+        let result = confirm(
+          `Exporting with bluring(${this.blurCategories.map(
+            category => categories[category]
+          )}) will result in images being permanently changed.\nDo you wish to continue?`
+        );
+        if (!result) return;
+      }
       $("#exportDataset").modal("hide");
-      Dataset.exportingCOCO(this.dataset.id, this.exporting.categories)
+      Dataset.exportingCOCO(
+        this.dataset.id,
+        this.exporting.categories,
+        this.blurCategories
+      )
         .then(response => {
           let id = response.data.id;
           this.exporting.id = id;
@@ -648,7 +611,7 @@ export default {
         event.preventDefault();
         let max = window.innerWidth * 0.5;
         this.sidebar.width = Math.min(Math.max(event.x, 150), max);
-        localStorage.setItem("dataset/sideWidth", this.sidebar.width)
+        localStorage.setItem("dataset/sideWidth", this.sidebar.width);
       }
     },
     startDrag() {
@@ -672,7 +635,12 @@ export default {
     },
     categoryTags() {
       let tags = {};
-      this.categories.forEach(c => tags[c.id] = c.name);
+      this.categories.forEach(c => (tags[c.id] = c.name));
+      return tags;
+    },
+    blurCategoriesTags() {
+      let tags = {};
+      this.categories.forEach(c => (tags[c.id] = c.name));
       return tags;
     }
   },
@@ -770,7 +738,7 @@ export default {
     let tab = localStorage.getItem("dataset/tab");
     let order = localStorage.getItem("dataset/order");
     let sideWidth = localStorage.getItem("dataset/sideWidth");
-    
+
     if (sideWidth !== null) this.sidebar.width = parseInt(sideWidth);
     if (tab !== null) this.tab = tab;
     if (order !== null) this.order = order;

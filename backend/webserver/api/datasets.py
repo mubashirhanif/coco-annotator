@@ -45,6 +45,7 @@ coco_upload.add_argument('coco', location='files', type=FileStorage, required=Tr
 
 export = reqparse.RequestParser()
 export.add_argument('categories', type=str, default=None, required=False, help='Ids of categories to export')
+export.add_argument('blur_categories', type=str, default=None, required=False, help='Ids of categories to blur')
 
 update_dataset = reqparse.RequestParser()
 update_dataset.add_argument('categories', location='json', type=list, help="New list of categories")
@@ -432,19 +433,26 @@ class DatasetExport(Resource):
 
         args = export.parse_args()
         categories = args.get('categories')
+        blur_categories = args.get('blur_categories')
         
         if len(categories) == 0:
             categories = []
+        
+        if len(blur_categories) == 0:
+            blur_categories = []
 
         if len(categories) > 0 or isinstance(categories, str):
             categories = [int(c) for c in categories.split(',')]
+        
+        if len(blur_categories) > 0 or isinstance(blur_categories, str):
+            blur_categories = [int(c) for c in blur_categories.split(',')]
 
         dataset = DatasetModel.objects(id=dataset_id).first()
         
         if not dataset:
             return {'message': 'Invalid dataset ID'}, 400
         
-        return dataset.export_coco(categories=categories)
+        return dataset.export_coco(categories=categories, blur_categories=blur_categories)
     
     @api.expect(coco_upload)
     @login_required

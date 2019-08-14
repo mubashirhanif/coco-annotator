@@ -14,13 +14,57 @@ import numpy as np
 import time
 import json
 import os
+import tarfile
+import shutil
+
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFilter
 
 from celery import shared_task
 from ..socket import create_socket
 
+def rectangle(draw, xy, fill=255):
+    x0, y0, x1, y1 = xy
+    draw.rectangle(xy, fill=fill)
+
+def compute_paths(image, export_folder):
+    image_path = image['path']
+    image_name = image['file_name']
+    new_image_path = f"{export_folder}/{'/'.join(image_path.split('/')[2:-1])}/"
+    return (image_path, image_name, new_image_path)
+    
+def save_image(image, directory, image_name):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    image.save(f"{directory}{image_name}")
+
+def blur_image(image_path, annotations):
+    
+    # Open an image and convert to std format
+    im = Image.open(image_path).convert('RGB')
+
+    # Create rounded rectangle mask
+    mask = Image.new('L', im.size, 0)
+    draw = ImageDraw.Draw(mask)
+    for annotation in annotations:
+        segments = annotation.segmentation
+        if not segments:
+            continue
+        # get the fist segment, asssuming only one bbox
+        segment = segments[0]
+        # draw mask from this annotations
+        rectangle(draw, [segment[0],segment[1],segment[4],segment[5]])
+    
+    # Blur image
+    blurred = im.filter(ImageFilter.GaussianBlur(10))
+
+    # Paste blurred region and save result
+    im.paste(blurred, mask=mask)
+    return im
 
 @shared_task
-def export_annotations(task_id, dataset_id, categories):
+def export_annotations(task_id, dataset_id, categories, blur_categories):
     
     task = TaskModel.objects.get(id=task_id)
     dataset = DatasetModel.objects.get(id=dataset_id)
@@ -28,16 +72,27 @@ def export_annotations(task_id, dataset_id, categories):
     task.update(status="PROGRESS")
     socket = create_socket()
 
-    task.info("Beginning Export (COCO Format)")
+    task.info("Beginning Export (COCO Format) and Bluring Images")
 
     db_categories = CategoryModel.objects(id__in=categories, deleted=False) \
         .only(*CategoryModel.COCO_PROPERTIES)
     db_images = ImageModel.objects(deleted=False, annotated=True, dataset_id=dataset.id)\
         .only(*ImageModel.COCO_PROPERTIES)
+    db_non_annotated_images = ImageModel.objects(deleted=False, annotated=False, dataset_id=dataset.id)\
+        .only(*ImageModel.COCO_PROPERTIES)
     db_annotations = AnnotationModel.objects(deleted=False, category_id__in=categories)
     
-    total_items = db_categories.count()
+    db_blur_annotations = AnnotationModel.objects(deleted=False, category_id__in=blur_categories)
+    
+    timestamp = time.time()
+    directory = f"{dataset.directory}.exports/"
+    file_path = f"{directory}coco-{timestamp}"
+    file_ext = ".json"
 
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    total_items = db_categories.count()
     coco = {
         'images': [],
         'categories': [],
@@ -45,6 +100,13 @@ def export_annotations(task_id, dataset_id, categories):
     }
 
     total_items += db_images.count()
+
+    # adding blur items for progress
+    total_items += db_blur_annotations.count()
+
+    # adding compression progres points
+    total_items += 30
+
     progress = 0
 
     # iterate though all categoires and upsert
@@ -70,11 +132,12 @@ def export_annotations(task_id, dataset_id, categories):
     total_annotations = db_annotations.count()
     total_images = db_images.count()
     for image in fix_ids(db_images):
-
+        image_path, image_name, new_image_path = compute_paths(image, file_path)
         progress += 1
-        task.set_progress((progress/total_items)*100, socket=socket)  
-
+        
         annotations = db_annotations.filter(image_id=image.get('id'))\
+            .only(*AnnotationModel.COCO_PROPERTIES)
+        blur_annotations = db_blur_annotations.filter(image_id=image.get('id'), isbbox=True)\
             .only(*AnnotationModel.COCO_PROPERTIES)
         annotations = fix_ids(annotations)
         num_annotations = 0
@@ -95,25 +158,40 @@ def export_annotations(task_id, dataset_id, categories):
                 
                 num_annotations += 1
                 coco.get('annotations').append(annotation)
-                
+        task.info(f"Bluring image: {image['file_name']}")
+        im = blur_image(image_path, blur_annotations)
+        save_image(im, new_image_path, image_name)
+        progress += blur_annotations.count()
+
+        task.set_progress((progress/total_items)*100, socket=socket)  
+
+
         task.info(f"Exporting {num_annotations} annotations for image {image.get('id')}")
         coco.get('images').append(image)
     
+    # save rest of the images
+    for image in fix_ids(db_non_annotated_images):
+        image_path, image_name, new_image_path = compute_paths(image, file_path)
+        save_image(Image.open(image_path).convert('RGB'), new_image_path, image_name)
+        
+    # compressing blurred images. and removing the actual folder.
+    tarball = tarfile.open(f"{file_path}.tar.gz", "w:gz")
+    tarball.add(f"{file_path}/", file_path.split('/')[-1])
+    tarball.close()
+    shutil.rmtree(f"{file_path}/")
+    progress += 30
+
+    
+    task.set_progress((progress/total_items)*100, socket=socket)  
+
     task.info(f"Done export {total_annotations} annotations and {total_images} images from {dataset.name}")
 
-    timestamp = time.time()
-    directory = f"{dataset.directory}.exports/"
-    file_path = f"{directory}coco-{timestamp}.json"
-
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
     task.info(f"Writing export to file {file_path}")
-    with open(file_path, 'w') as fp:
+    with open(file_path+file_ext, 'w') as fp:
         json.dump(coco, fp)
 
     task.info("Creating export object")
-    export = ExportModel(dataset_id=dataset.id, path=file_path, tags=["COCO", *category_names])
+    export = ExportModel(dataset_id=dataset.id, path=file_path+file_ext, tags=["COCO", *category_names])
     export.save()
 
     task.set_progress(100, socket=socket)
