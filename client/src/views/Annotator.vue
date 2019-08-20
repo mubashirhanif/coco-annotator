@@ -68,6 +68,7 @@
         :filename="image.filename"
         :folders="$route.query.folders"
         :currentcategory="current.category"
+        :get-hidden-categories="getHiddenCategories"
         ref="filetitle"
       />
 
@@ -787,6 +788,33 @@ export default {
     previousImage() {
       if (this.image.previous != null)
         this.$refs.filetitle.route(this.image.previous);
+    },
+    getHiddenCategories() {
+      let hiddenCategories = this.$refs.category
+        .filter(category => !category.checkVisibility())
+        .map(category => category.getIndex());
+      console.log("these: ", hiddenCategories);
+      return hiddenCategories;
+    },
+    getHiddenCategoriesFromURL() {
+      let hiddenCategories = [this.$route.query.hidden_categories].flat();
+      if (hiddenCategories) return hiddenCategories.map(Number);
+      return [];
+    },
+    hideHiddenCategories() {
+      let hiddenCategories = this.$refs.category;
+      if (hiddenCategories) {
+        hiddenCategories
+          .filter(category =>
+            this.getHiddenCategoriesFromURL().includes(category.getIndex())
+          )
+          .forEach((category) => {
+            if(this.categories[category.getIndex()].annotations.length) category.onEyeClick();
+          });
+        if(!this.currentCategory.checkVisibility()) this.currentCategory.onEyeClick();
+      }else {
+        setTimeout(this.hideHiddenCategories, 100);
+      }
     }
   },
   watch: {
@@ -897,8 +925,8 @@ export default {
     // });
 
     this.initCanvas();
-    this.getData().finally(() => this.setCategoryFromURL());
-
+    this.getData().finally(_ => this.setCategoryFromURL());
+    this.$nextTick(() => this.hideHiddenCategories());
     this.$socket.emit("annotating", { image_id: this.image.id, active: true });
   },
   created() {
