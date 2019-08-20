@@ -14,7 +14,7 @@ class Info(Resource):
         """ Returns information about current version """
 
         return {
-            "name": "FML Annotator",
+            "name": "fml Annotator",
             "author": "Justin Brooks, Mubashir Hanif",
             "demo": "",
             "repo": "https://github.com/mubashirhanif/coco-annotator",
