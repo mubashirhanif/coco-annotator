@@ -67,6 +67,7 @@
         :nextimage="image.next"
         :filename="image.filename"
         :folders="$route.query.folders"
+        :currentcategory="current.category"
         ref="filetitle"
       />
 
