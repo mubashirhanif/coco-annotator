@@ -9,7 +9,7 @@ def get_tag():
 
 class Config:
 
-    NAME = os.getenv("NAME", "FML Annotator")
+    NAME = os.getenv("NAME", "fml Annotator")
     VERSION = get_tag()
 
     ### File Watcher

@@ -7,7 +7,7 @@ const state = {
   loginEnabled: true,
   version: "loading",
   totalUsers: 1,
-  name: "FML Annotator",
+  name: "fml Annotator",
   socket: null
 };
 
