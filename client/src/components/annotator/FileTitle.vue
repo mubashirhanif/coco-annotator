@@ -14,9 +14,11 @@
     />
 
     <h6 class="text-center" style="color: white;">
-      <span class="d-inline-block text-truncate" style="max-width: 73%;">{{
+      <span class="d-inline-block text-truncate" style="max-width: 73%;">
+        {{
         filename
-      }}</span>
+        }}
+      </span>
     </h6>
   </div>
 </template>
@@ -43,6 +45,9 @@ export default {
     },
     currentcategory: {
       default: null
+    },
+    getHiddenCategories: {
+      type: Function
     }
   },
   methods: {
@@ -57,8 +62,16 @@ export default {
 
       this.$nextTick(() => {
         this.$parent.save(() => {
-          let folders = this.folders ? [this.folders] : []
-          this.$router.push({ name: "annotate", params: { identifier }, query: {folders: folders.flat(), category: this.currentcategory}});
+          let folders = !!this.folders ? [this.folders] : [];
+          this.$router.push({
+            name: "annotate",
+            params: { identifier },
+            query: {
+              folders: folders.flat(),
+              category: this.currentcategory,
+              hidden_categories: this.getHiddenCategories()
+            }
+          });
         });
       });
     }

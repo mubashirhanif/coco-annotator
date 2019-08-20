@@ -201,6 +201,12 @@ export default {
     };
   },
   methods: {
+    checkVisibility(){
+      return this.isVisible;
+    },
+    getIndex(){
+      return this.index;
+    },
     show(index) {
       if (this.search.length === 0) return true;
       return this.filterFound.indexOf(index) > -1;
@@ -478,7 +484,7 @@ export default {
     }
   },
   mounted() {
-    this.initCategory();
+    this.initCategory();    
   }
 };
 </script>
