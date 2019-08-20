@@ -503,7 +503,7 @@ export default {
       let process = "Loading annotation data";
       this.addProcess(process);
       this.loading.data = true;
-      let foldersToSend = !!this.$route.query.folders
+      let foldersToSend = this.$route.query.folders
         ? [this.$route.query.folders].flat()
         : [];
 
@@ -896,8 +896,8 @@ export default {
     // });
 
     this.initCanvas();
-    this.getData().finally(_ => this.setCategoryFromURL());
-    
+    this.getData().finally(() => this.setCategoryFromURL());
+
     this.$socket.emit("annotating", { image_id: this.image.id, active: true });
   },
   created() {

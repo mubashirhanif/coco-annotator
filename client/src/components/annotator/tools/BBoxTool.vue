@@ -205,7 +205,7 @@ export default {
       );
     },
     drawCrosshair(point) {
-      if (!!this.crosshair.crosshairPath) this.crosshair.crosshairPath.remove();
+      if (this.crosshair.crosshairPath) this.crosshair.crosshairPath.remove();
       this.crosshair.crosshairPath = new paper.CompoundPath(
         this.crosshair.pathOptions
       );
@@ -244,7 +244,7 @@ export default {
         this.tool.activate();
         localStorage.setItem("editorTool", this.name);
       } else {
-        if (!!this.crosshair.crosshairPath)
+        if (this.crosshair.crosshairPath)
           this.crosshair.crosshairPath.remove();
       }
       this.size = new Size(
@@ -261,7 +261,7 @@ export default {
         this.polygon.path.strokeWidth = newScale * this.scaleFactor;
     },
     "crosshair.show"(newValue) {
-      if (!newValue && !!this.crosshair.crosshairPath)
+      if (!newValue && this.crosshair.crosshairPath)
         this.crosshair.crosshairPath.remove();
     },
     "polygon.pathOptions.strokeColor"(newColor) {
