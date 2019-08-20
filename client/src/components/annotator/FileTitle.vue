@@ -40,6 +40,9 @@ export default {
     folders: {
       type: [Array, String],
       default: null
+    },
+    currentcategory: {
+      default: null
     }
   },
   methods: {
@@ -55,7 +58,7 @@ export default {
       this.$nextTick(() => {
         this.$parent.save(() => {
           let folders = this.folders ? [this.folders] : []
-          this.$router.push({ name: "annotate", params: { identifier }, query: {folders: folders.flat(), category: this.$parent.current.category}});
+          this.$router.push({ name: "annotate", params: { identifier }, query: {folders: folders.flat(), category: this.currentcategory}});
         });
       });
     }
