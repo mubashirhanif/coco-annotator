@@ -67,7 +67,7 @@ class DatasetExports(Resource):
         if not current_user.can_download(dataset):
             return {"message": "You do not have permission to download the dataset's annotations"}, 403
 
-        return send_file(export.path, attachment_filename=f"{dataset.name}-{'-'.join(export.tags)}.json", as_attachment=True)
+        return send_file(export.path, attachment_filename=f"{dataset.name.encode('utf-8')}-{'-'.join(export.tags).encode('utf-8')}.json", as_attachment=True)
 
 @api.route('/<int:export_id>/downloadtar')
 class ImageExports(Resource):
@@ -87,5 +87,5 @@ class ImageExports(Resource):
         if not current_user.can_download(dataset):
             return {"message": "You do not have permission to download the dataset's annotations"}, 403
         path = export.path.replace(".json", ".tar.gz")
-        return send_file(path, attachment_filename=f"{dataset.name}-{'-'.join(export.tags)}.tar.gz", as_attachment=True)
+        return send_file(path, attachment_filename=f"{dataset.name.encode('utf-8')}-{'-'.join(export.tags).encode('utf-8')}.tar.gz", as_attachment=True)
 
