@@ -20,6 +20,10 @@ import shutil
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFilter
+from PIL import ImageFile
+
+#Hotfix: Loading Truncated images as well 
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from celery import shared_task
 from ..socket import create_socket
